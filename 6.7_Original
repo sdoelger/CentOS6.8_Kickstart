@@ -1,0 +1,105 @@
+# Install OS instead of upgrade
+install
+# Use installation media
+url --url http://192.168.1.1/cobbler/ks_mirror/CentOS6.7
+#Root password
+rootpw --iscrypted $1$wHhpfnYs$2FstQNh6URU2eo85k/Vhx0
+#System authorization information
+auth --useshadow --passalgo=sha512
+# Use graphical mode install
+graphical
+# System keyboard
+keyboard us
+# System language
+lang en_US
+# Network information
+network --bootproto=dhcp --device=eth0 --onboot=on
+network --bootproto=dhcp --device=eth1 --onboot=on
+# Reboot after installation
+reboot
+# SELinux configuration
+selinux --disabled
+# Do not configure the X Window System
+skipx
+# Installation logging level
+logging --level=info
+# Firewall configuration
+firewall --enabled
+# System timezone
+timezone --utc UTC
+# Clear the Master Boot Record
+zerombr
+# System bootloader configuration
+bootloader --location=mbr
+# Partition clearing information
+clearpart --all
+# Disk partitioning information
+part /boot --fstype="ext4" --size=500
+part swap --fstype="swap" --size=960
+part / --fstype="ext4" --size=50000 --fsoptions="discard,noatime,errors=continue,data=writeback" --asprimary
+
+
+#%packages
+#%end
+
+%post --log=/root/ks-post.log
+
+
+
+useradd gpsops
+usermod -p 'FtDhti08RZ/p2' gpsops
+usermod -a -G dialout gpsops
+usermod -a -G uucp gpsops
+
+cp -p /usr/share/zoneinfo/UTC /etc/localtime
+/sbin/hwclock --hctosys --utc
+
+#Edit the /etc/rc.local file
+echo " " >> /etc/rc.local
+echo "/bin/kill -s HUP" >> /etc/rc.local
+echo "echo noop > /sys/block/sda/queue/scheduler" >> /etc/rc.local
+echo "touch /var/log/lastlog" >> /etc/rc.local
+
+#Edit the /etc/sysctl.conf file for SSD optimization
+echo " " >> /etc/sysctl.conf
+echo "#Set swappiness so that kernel will swap only to avoid an out of memory condition" >> /etc/sysctl.conf
+echo "vm.swappiness = 1" >> /etc/sysctl.conf
+echo " " >> /etc/sysctl.conf
+echo "#cache_pressure" >> /etc/sysctl.conf
+echo "vm.vfs_cache_pressure = 50" >> /etc/sysctl.conf
+
+sed -i 's/net.ipv4.ip_forward = 0/net.ipv4.ip_forward = 1/g' /etc/sysctl.conf
+
+# Create SSH banner
+
+cat >> /etc/ssh/sshd_banner << EOF
+
+This computer is funded by the United States Government and operated by the
+California Institute of Technology in support of ongoing U.S. Government
+programs and activities. If you are not authorized to access this system,
+disconnect now.
+
+Users of this system have no expectation of privacy. By continuing, you
+consent to your keystrokes and data content being monitored.
+
+EOF
+
+# Enable Banner
+
+sed -i "s|#Banner none|Banner /etc/ssh/sshd_banner|" /etc/ssh/sshd_config
+
+# Add to  ntp.conf file
+
+#server 127.127.1.0 #local clock
+#fudge 127.127.1.0 stratum 10
+
+# Edit /etc/ssh/sshd_config to allow for receiver control via non-standard ports and for no root login
+
+sed -i 's/#PermitTunnel no/PermitTunnel yes/g' /etc/ssh/sshd_config
+sed -i 's/#PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
+
+#Edit /etc/fstab, also for SSD optimization
+
+echo "none                      /var/log                tmpfs   size=10%        0 0" >> /etc/fstab
+
+%end
