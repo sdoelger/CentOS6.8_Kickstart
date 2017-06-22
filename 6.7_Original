@@ -1,7 +1,7 @@
 # Install OS instead of upgrade
 install
 # Use installation media
-url --url http://192.168.1.1/cobbler/ks_mirror/CentOS6.7
+url --url http://192.168.1.1/cobbler/ks_mirror/CentOS6.9
 #Root password
 rootpw --iscrypted $1$wHhpfnYs$2FstQNh6URU2eo85k/Vhx0
 #System authorization information
