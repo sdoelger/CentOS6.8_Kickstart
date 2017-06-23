@@ -109,10 +109,14 @@ echo "none                      /var/log                tmpfs   size=10%        
 # new machine will have to be plugged into WAN on eth1 and cobbler on eth0
 # script erases the line of code in /etc/rc.local/init.d
 
+# don't add the below to rc.local, just run the commands.
+# add command so that post script is run as root
+
 --nochroot
 cp /usr/local/src/post_cobbler_config /mnt/sysimage/usr/local/src/post_cobbler_config
 
-echo "chmod 777 /usr/local/src/post_cobbler_config" >> /etc/rc.local
-echo "./usr/local/src/post_cobbler_config" >> /etc/rc.local
+chmod 777 /mnt/sysimage/usr/local/src/post_cobbler_config
+sudo chmod +s /mnt/sysimage/usr/local/src/post_cobbler_config
+./mnt/sysimage/usr/local/src/post_cobbler_config
 
 %end
