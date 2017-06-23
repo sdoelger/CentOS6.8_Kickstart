@@ -56,9 +56,11 @@ cp -p /usr/share/zoneinfo/UTC /etc/localtime
 
 #Edit the /etc/rc.local file
 echo " " >> /etc/rc.local
-echo "/bin/kill -s HUP" >> /etc/rc.local
+echo "/bin/kill -s HUP $(cat /var/run/syslogd.pid)" >> /etc/rc.local
 echo "echo noop > /sys/block/sda/queue/scheduler" >> /etc/rc.local
 echo "touch /var/log/lastlog" >> /etc/rc.local
+echo "mkdir /var/log/sa" >> /etc/rc.local
+
 
 #Edit the /etc/sysctl.conf file for SSD optimization
 echo " " >> /etc/sysctl.conf
@@ -88,10 +90,6 @@ EOF
 
 sed -i "s|#Banner none|Banner /etc/ssh/sshd_banner|" /etc/ssh/sshd_config
 
-# Add to  ntp.conf file
-
-#server 127.127.1.0 #local clock
-#fudge 127.127.1.0 stratum 10
 
 # Edit /etc/ssh/sshd_config to allow for receiver control via non-standard ports and for no root login
 
@@ -101,5 +99,20 @@ sed -i 's/#PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
 #Edit /etc/fstab, also for SSD optimization
 
 echo "none                      /var/log                tmpfs   size=10%        0 0" >> /etc/fstab
+
+# can't run items like yum, and any changes to ntp since those tools haven't been installed at 
+#+ this point yet.
+# copy script from some storage location on Cobbler to the new machine.
+# add a line of code in /etc/rc.local/init.d/ to run the script
+# the machine runs the script after its first reboot
+# script changes the eth1 interface to dhcp so it can run yum updates 
+# new machine will have to be plugged into WAN on eth1 and cobbler on eth0
+# script erases the line of code in /etc/rc.local/init.d
+
+--nochroot
+cp /usr/local/src/post_cobbler_config /mnt/sysimage/usr/local/src/post_cobbler_config
+
+echo "chmod 777 /usr/local/src/post_cobbler_config" >> /etc/rc.local
+echo "./usr/local/src/post_cobbler_config" >> /etc/rc.local
 
 %end
